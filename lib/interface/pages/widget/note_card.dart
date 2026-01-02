@@ -11,6 +11,8 @@ class NoteCard extends StatelessWidget {
   final String content;
   final int index;
   final BuildContext context_;
+  final int? timeCreated;
+  final bool isPinned;
 
   const NoteCard({
     Key? key,
@@ -18,8 +20,20 @@ class NoteCard extends StatelessWidget {
     required this.title,
     required this.content,
     required this.context_,
+    this.timeCreated,
+    this.isPinned = false,
     this.index = 1000,
   }) : super(key: key);
+
+  String _formatDate(int? epoch) {
+    if (epoch == null) {
+      return "Unknown date";
+    }
+    final date = DateTime.fromMillisecondsSinceEpoch(epoch);
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return "$day/$month/${date.year}";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,70 +44,110 @@ class NoteCard extends StatelessWidget {
       Hive.box<Note>(boxNote).deleteAt(index);
     }
 
-    return Container(
+    void _togglePinned() {
+      final note = Note(
+        title: title,
+        content: content,
+        colorHex: colorToHex(color),
+        timeCreated: timeCreated,
+        isPinned: !isPinned,
+      );
+      Hive.box<Note>(boxNote).putAt(index, note);
+    }
+
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 2,
+      child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: color,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
         ),
         width: size.width * .4,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Note Title
+            Row(
+              children: [
+                Text(
+                  _formatDate(timeCreated),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                if (isPinned) ...[
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.push_pin_rounded,
+                    size: 14,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
             Text(
-              title.isEmpty ? "Title" : title,
-              style: const TextStyle(fontSize: 24),
+              title.isEmpty ? "Untitled note" : title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-
-            // Note Content
             const SizedBox(height: 8),
             Text(
-              content.isEmpty ? "..." : content,
-              style: const TextStyle(fontSize: 16),
-              maxLines: 99,
+              content.isEmpty ? "Write something..." : content,
+              style: Theme.of(context).textTheme.bodyMedium,
+              maxLines: 6,
               overflow: TextOverflow.ellipsis,
             ),
-
-            // Delete Button
-            const SizedBox(height: 16),
-            index == 1000
-                ? Container()
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Opacity(
-                        opacity: .35,
-                        child: IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () => Navigator.pushNamed(
-                              context, RouteName.editNote,
-                              arguments: {
-                                "title": title,
-                                "content": content,
-                                "colorHex": colorToHex(color),
-                                "index" :index,
-                              }),
-                        ),
+            if (index != 1000) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  PopupMenuButton<String>(
+                    tooltip: "Actions",
+                    onSelected: (value) {
+                      if (value == "edit") {
+                        Navigator.pushNamed(
+                          context,
+                          RouteName.editNote,
+                          arguments: {
+                            "title": title,
+                            "content": content,
+                            "colorHex": colorToHex(color),
+                            "index": index,
+                            "isPinned": isPinned,
+                            "timeCreated": timeCreated,
+                          },
+                        );
+                      } else if (value == "pin") {
+                        _togglePinned();
+                      } else if (value == "delete") {
+                        _deleteNote(index);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: "pin",
+                        child: Text(isPinned ? "Unpin" : "Pin"),
                       ),
-                      Opacity(
-                        opacity: .35,
-                        child: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _deleteNote(index),
-                        ),
+                      const PopupMenuItem(
+                        value: "edit",
+                        child: Text("Edit"),
+                      ),
+                      const PopupMenuItem(
+                        value: "delete",
+                        child: Text("Delete"),
                       ),
                     ],
+                    child: const Icon(Icons.more_vert),
                   ),
+                ],
+              ),
+            ],
           ],
-        ));
+        ),
+      ),
+    );
   }
 }

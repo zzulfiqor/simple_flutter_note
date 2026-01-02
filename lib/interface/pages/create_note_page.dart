@@ -18,6 +18,8 @@ class CreateNotePage extends StatefulWidget {
   String content = "";
   int index = 1000;
   String colorHex = defaultNoteBackground;
+  bool isPinned = false;
+  int? timeCreated;
 
   @override
   State<CreateNotePage> createState() => _CreateNotePageState();
@@ -64,35 +66,71 @@ class _CreateNotePageState extends State<CreateNotePage> {
       widget.contentController.text = widget.content;
       widget.colorHex = arguments['colorHex'] ?? '';
       widget.index = arguments['index'] ?? 0;
+      widget.isPinned = arguments['isPinned'] ?? false;
+      widget.timeCreated = arguments['timeCreated'];
       isInit = false;
     }
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text(widget.isEdit ? "Edit Note" : "Create Note"),
+        actions: [
+          IconButton(
+            tooltip: "Save",
+            onPressed: () {
+              widget.isEdit
+                  ? editNote(
+                      Note(
+                        title: widget.titleController.text,
+                        content: widget.contentController.text,
+                        colorHex: widget.colorHex,
+                        timeCreated: widget.timeCreated ??
+                            DateTime.now().millisecondsSinceEpoch,
+                        isPinned: widget.isPinned,
+                      ),
+                    )
+                  : addNote(
+                      Note(
+                        title: widget.titleController.text,
+                        content: widget.contentController.text,
+                        colorHex: widget.colorHex,
+                        timeCreated: DateTime.now().millisecondsSinceEpoch,
+                        isPinned: widget.isPinned,
+                      ),
+                    );
+            },
+            icon: const Icon(Icons.save_outlined),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Note Preview
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
             Center(
               child: NoteCard(
                 color: colorFromHex(widget.colorHex)!,
                 title: widget.title,
                 content: widget.content,
                 context_: context,
+                timeCreated: widget.timeCreated ??
+                    DateTime.now().millisecondsSinceEpoch,
+                isPinned: widget.isPinned,
               ),
             ),
 
             // Note Title Input
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
             TextField(
               controller: widget.titleController,
               decoration: const InputDecoration(
-                labelText: "Note Title",
+                labelText: "Title",
+                hintText: "Add a title",
+                filled: true,
               ),
               onChanged: (val) {
                 setState(() {
@@ -102,13 +140,16 @@ class _CreateNotePageState extends State<CreateNotePage> {
             ),
 
             // Note Content Input
+            const SizedBox(height: 16),
             TextField(
               controller: widget.contentController,
               decoration: const InputDecoration(
-                labelText: "Note Content",
+                labelText: "Content",
+                hintText: "Write your note",
+                filled: true,
               ),
               minLines: 1,
-              maxLines: 4,
+              maxLines: 6,
               onChanged: (val) {
                 setState(() {
                   widget.content = val;
@@ -121,28 +162,43 @@ class _CreateNotePageState extends State<CreateNotePage> {
             Row(
               children: [
                 const Text(
-                  "Set Note Color : ",
+                  "Note Color",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
+                const SizedBox(width: 12),
 
                 // Color
                 InkWell(
                   onTap: () {
-                    showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text("Pick a color"),
-                            content: SingleChildScrollView(
-                              child: BlockPicker(
+                    showModalBottomSheet(
+                      context: context,
+                      showDragHandle: true,
+                      builder: (context) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Pick a color",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              BlockPicker(
                                 pickerColor: colorFromHex(widget.colorHex) ??
                                     Colors.white,
                                 onColorChanged: (color) =>
                                     _setColor(colorToHex(color)),
                               ),
-                            ),
-                          );
-                        });
+                            ],
+                          ),
+                        );
+                      },
+                    );
                   },
                   child: Ink(
                     decoration: BoxDecoration(
@@ -160,12 +216,23 @@ class _CreateNotePageState extends State<CreateNotePage> {
               ],
             ),
 
-            // Add New Note
             const SizedBox(height: 24),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text("Pin this note"),
+              subtitle: const Text("Pinned notes stay at the top"),
+              value: widget.isPinned,
+              onChanged: (value) {
+                setState(() {
+                  widget.isPinned = value;
+                });
+              },
+            ),
+            const SizedBox(height: 8),
             SizedBox(
               height: 50,
               width: size.width,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: () {
                   widget.isEdit
                       ? editNote(
@@ -173,7 +240,9 @@ class _CreateNotePageState extends State<CreateNotePage> {
                             title: widget.titleController.text,
                             content: widget.contentController.text,
                             colorHex: widget.colorHex,
-                            timeCreated: DateTime.now().millisecondsSinceEpoch,
+                            timeCreated: widget.timeCreated ??
+                                DateTime.now().millisecondsSinceEpoch,
+                            isPinned: widget.isPinned,
                           ),
                         )
                       : addNote(
@@ -182,12 +251,14 @@ class _CreateNotePageState extends State<CreateNotePage> {
                             content: widget.contentController.text,
                             colorHex: widget.colorHex,
                             timeCreated: DateTime.now().millisecondsSinceEpoch,
+                            isPinned: widget.isPinned,
                           ),
                         );
                 },
-                child: Text(widget.isEdit ? "Ubah" : "Create Note"),
+                icon: const Icon(Icons.check_circle_outline),
+                label: Text(widget.isEdit ? "Save Changes" : "Create Note"),
               ),
-            )
+            ),
           ],
         ),
       ),
