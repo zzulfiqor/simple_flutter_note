@@ -17,7 +17,6 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   bool _sortNewest = true;
   bool _useGrid = true;
-  bool _showPinnedOnly = false;
 
   @override
   void dispose() {
@@ -38,24 +37,18 @@ class _HomePageState extends State<HomePage> {
       },
     );
 
-    final filtered = notes.where((item) {
-      final note = item["note"] as Note;
-      final title = note.title?.toLowerCase() ?? "";
-      final content = note.content?.toLowerCase() ?? "";
-      final matchesQuery =
-          query.isEmpty || title.contains(query) || content.contains(query);
-      final matchesPinned = !_showPinnedOnly || (note.isPinned ?? false);
-      return matchesQuery && matchesPinned;
-    }).toList();
+    final filtered = query.isEmpty
+        ? notes
+        : notes.where((item) {
+            final note = item["note"] as Note;
+            final title = note.title?.toLowerCase() ?? "";
+            final content = note.content?.toLowerCase() ?? "";
+            return title.contains(query) || content.contains(query);
+          }).toList();
 
     filtered.sort((a, b) {
       final noteA = a["note"] as Note;
       final noteB = b["note"] as Note;
-      final pinA = noteA.isPinned ?? false;
-      final pinB = noteB.isPinned ?? false;
-      if (pinA != pinB) {
-        return pinA ? -1 : 1;
-      }
       final timeA = noteA.timeCreated ?? 0;
       final timeB = noteB.timeCreated ?? 0;
       return _sortNewest ? timeB.compareTo(timeA) : timeA.compareTo(timeB);
@@ -144,16 +137,6 @@ class _HomePageState extends State<HomePage> {
                           });
                         },
                       ),
-                      const SizedBox(width: 8),
-                      FilterChip(
-                        label: const Text("Pinned"),
-                        selected: _showPinnedOnly,
-                        onSelected: (value) {
-                          setState(() {
-                            _showPinnedOnly = value;
-                          });
-                        },
-                      ),
                       const Spacer(),
                       Text(
                         "${notes.length} notes",
@@ -203,7 +186,6 @@ class _HomePageState extends State<HomePage> {
                                     title: note.title ?? "",
                                     content: note.content ?? "",
                                     timeCreated: note.timeCreated,
-                                    isPinned: note.isPinned ?? false,
                                     context_: context,
                                     index: noteIndex,
                                   );
@@ -223,7 +205,6 @@ class _HomePageState extends State<HomePage> {
                                     title: note.title ?? "",
                                     content: note.content ?? "",
                                     timeCreated: note.timeCreated,
-                                    isPinned: note.isPinned ?? false,
                                     context_: context,
                                     index: noteIndex,
                                   );

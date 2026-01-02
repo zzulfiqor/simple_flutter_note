@@ -12,7 +12,6 @@ class NoteCard extends StatelessWidget {
   final int index;
   final BuildContext context_;
   final int? timeCreated;
-  final bool isPinned;
 
   const NoteCard({
     Key? key,
@@ -21,7 +20,6 @@ class NoteCard extends StatelessWidget {
     required this.content,
     required this.context_,
     this.timeCreated,
-    this.isPinned = false,
     this.index = 1000,
   }) : super(key: key);
 
@@ -44,17 +42,6 @@ class NoteCard extends StatelessWidget {
       Hive.box<Note>(boxNote).deleteAt(index);
     }
 
-    void _togglePinned() {
-      final note = Note(
-        title: title,
-        content: content,
-        colorHex: colorToHex(color),
-        timeCreated: timeCreated,
-        isPinned: !isPinned,
-      );
-      Hive.box<Note>(boxNote).putAt(index, note);
-    }
-
     return Material(
       color: color,
       borderRadius: BorderRadius.circular(16),
@@ -68,20 +55,9 @@ class NoteCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  _formatDate(timeCreated),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                if (isPinned) ...[
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.push_pin_rounded,
-                    size: 14,
-                  ),
-                ],
-              ],
+            Text(
+              _formatDate(timeCreated),
+              style: Theme.of(context).textTheme.labelSmall,
             ),
             const SizedBox(height: 8),
             Text(
@@ -116,21 +92,13 @@ class NoteCard extends StatelessWidget {
                             "content": content,
                             "colorHex": colorToHex(color),
                             "index": index,
-                            "isPinned": isPinned,
-                            "timeCreated": timeCreated,
                           },
                         );
-                      } else if (value == "pin") {
-                        _togglePinned();
                       } else if (value == "delete") {
                         _deleteNote(index);
                       }
                     },
                     itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: "pin",
-                        child: Text(isPinned ? "Unpin" : "Pin"),
-                      ),
                       const PopupMenuItem(
                         value: "edit",
                         child: Text("Edit"),

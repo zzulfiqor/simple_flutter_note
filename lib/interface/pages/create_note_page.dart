@@ -84,9 +84,7 @@ class _CreateNotePageState extends State<CreateNotePage> {
                         title: widget.titleController.text,
                         content: widget.contentController.text,
                         colorHex: widget.colorHex,
-                        timeCreated: widget.timeCreated ??
-                            DateTime.now().millisecondsSinceEpoch,
-                        isPinned: widget.isPinned,
+                        timeCreated: DateTime.now().millisecondsSinceEpoch,
                       ),
                     )
                   : addNote(
@@ -95,7 +93,6 @@ class _CreateNotePageState extends State<CreateNotePage> {
                         content: widget.contentController.text,
                         colorHex: widget.colorHex,
                         timeCreated: DateTime.now().millisecondsSinceEpoch,
-                        isPinned: widget.isPinned,
                       ),
                     );
             },
@@ -116,9 +113,7 @@ class _CreateNotePageState extends State<CreateNotePage> {
                 title: widget.title,
                 content: widget.content,
                 context_: context,
-                timeCreated: widget.timeCreated ??
-                    DateTime.now().millisecondsSinceEpoch,
-                isPinned: widget.isPinned,
+                timeCreated: DateTime.now().millisecondsSinceEpoch,
               ),
             ),
 
