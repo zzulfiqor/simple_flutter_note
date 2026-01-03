@@ -18,6 +18,8 @@ class CreateNotePage extends StatefulWidget {
   String content = "";
   int index = 1000;
   String colorHex = defaultNoteBackground;
+  bool isPinned = false;
+  int? timeCreated;
 
   @override
   State<CreateNotePage> createState() => _CreateNotePageState();
@@ -64,6 +66,8 @@ class _CreateNotePageState extends State<CreateNotePage> {
       widget.contentController.text = widget.content;
       widget.colorHex = arguments['colorHex'] ?? '';
       widget.index = arguments['index'] ?? 0;
+      widget.isPinned = arguments['isPinned'] ?? false;
+      widget.timeCreated = arguments['timeCreated'];
       isInit = false;
     }
 
@@ -208,6 +212,18 @@ class _CreateNotePageState extends State<CreateNotePage> {
             ),
 
             const SizedBox(height: 24),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text("Pin this note"),
+              subtitle: const Text("Pinned notes stay at the top"),
+              value: widget.isPinned,
+              onChanged: (value) {
+                setState(() {
+                  widget.isPinned = value;
+                });
+              },
+            ),
+            const SizedBox(height: 8),
             SizedBox(
               height: 50,
               width: size.width,
@@ -219,7 +235,9 @@ class _CreateNotePageState extends State<CreateNotePage> {
                             title: widget.titleController.text,
                             content: widget.contentController.text,
                             colorHex: widget.colorHex,
-                            timeCreated: DateTime.now().millisecondsSinceEpoch,
+                            timeCreated: widget.timeCreated ??
+                                DateTime.now().millisecondsSinceEpoch,
+                            isPinned: widget.isPinned,
                           ),
                         )
                       : addNote(
@@ -228,6 +246,7 @@ class _CreateNotePageState extends State<CreateNotePage> {
                             content: widget.contentController.text,
                             colorHex: widget.colorHex,
                             timeCreated: DateTime.now().millisecondsSinceEpoch,
+                            isPinned: widget.isPinned,
                           ),
                         );
                 },

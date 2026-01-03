@@ -19,11 +19,15 @@ class Note {
   @HiveField(4)
   String? colorHex;
 
+  @HiveField(5)
+  bool? isPinned;
+
   Note({
     this.id,
     this.title,
     this.content,
     this.timeCreated,
     this.colorHex,
+    this.isPinned,
   });
 }
